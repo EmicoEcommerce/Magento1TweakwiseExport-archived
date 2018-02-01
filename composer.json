@@ -1,0 +1,19 @@
+{
+    "name": "emico/magento1-tweakwise-export",
+    "type": "magento-module",
+    "description": "Magento 1 tweakwise export support",
+    "license": "PRIVATE",
+    "authors": [
+        {
+            "name":"Emico",
+            "email":"info@emico.nl"
+        }
+    ],
+    "extra": {
+        "map": [
+            ["app/code/community/Emico/TweakwiseExport", "app/code/community/Emico/TweakwiseExport"],
+            ["app/etc/modules/Emico_TweakwiseExport.xml", "app/etc/modules/Emico_TweakwiseExport.xml"],
+            ["shell/tweakwise.php", "shell/tweakwise.php"]
+        ]
+    }
+}

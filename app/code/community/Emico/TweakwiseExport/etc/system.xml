@@ -1,0 +1,223 @@
+<?xml version="1.0"?>
+<config>
+    <sections>
+        <emico_tweakwise translate="label" module="emico_tweakwiseexport">
+            <tab>catalog</tab>
+            <label>Tweakwise</label>
+            <sort_order>1000</sort_order>
+            <show_in_default>1</show_in_default>
+            <show_in_website>1</show_in_website>
+            <show_in_store>1</show_in_store>
+            <groups>
+                <global translate="label" module="emico_tweakwiseexport">
+                    <label>Global</label>
+                    <sort_order>10</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <fields>
+                        <key translate="label" module="emico_tweakwiseexport">
+                            <label>Authentication key</label>
+                            <comment>Provided by Tweakwise (8 alphanumeric characters)</comment>
+                            <validate>validate-alphanum validate-length minimum-length-8 maximum-length-8</validate>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </key>
+                        <log_enabled translate="label" module="emico_tweakwiseexport">
+                            <label>Log enabled</label>
+                            <comment>The default Magento log will be used, with the filename tweakwise.log</comment>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>30</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </log_enabled>
+                        <log_only_developer_requests translate="label" module="emico_tweakwiseexport">
+                            <label>Log only us</label>
+                            <comment>This configuration allows you to log only requests from developer IPs</comment>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>30</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </log_only_developer_requests>
+                    </fields>
+                </global>
+                <export translate="label" module="emico_tweakwiseexport">
+                    <label>Export</label>
+                    <sort_order>100</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <fields>
+                        <enabled translate="label" module="emico_tweakwiseexport">
+                            <label>Enabled</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment>When disabled store data will not be exported to TW</comment>
+                        </enabled>
+                        <validate_export translate="label" module="emico_tweakwiseexport">
+                            <label>Validate export</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>20</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment>Validate export on product, category en product -> category links count. This could fail if the category or product ignore events are used.</comment>
+                        </validate_export>
+                        <exclude_child_attributes translate="label" module="emico_tweakwiseexport">
+                            <label>Exclude child attributes</label>
+                            <frontend_type>multiselect</frontend_type>
+                            <source_model>emico_tweakwiseexport/system_config_source_productattributes</source_model>
+                            <sort_order>30</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment>Attributes to just get from the parent product</comment>
+                        </exclude_child_attributes>
+                        <manual_run_direct translate="label">
+                            <label>Run Tweakwise export directly</label>
+                            <frontend_type>button</frontend_type>
+                            <frontend_model>emico_tweakwiseexport/adminhtml_button_rebuild_direct</frontend_model>
+                            <sort_order>40</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </manual_run_direct>
+                        <manual_run_background translate="label">
+                            <label>Run Tweakwise export in background</label>
+                            <comment><![CDATA[Button is disabled and <font color="#919191"><strong>gray</strong></font> if generation of Tweakwise file already is scheduled.]]></comment>
+                            <frontend_type>button</frontend_type>
+                            <frontend_model>emico_tweakwiseexport/adminhtml_button_rebuild_background</frontend_model>
+                            <sort_order>50</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </manual_run_background>
+                        <protected translate="label" module="emico_tweakwiseexport">
+                            <label>Feed suffix</label>
+                            <sort_order>60</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <comment><![CDATA[Feed protection parameter http://example.com/tweakwiseexport/feed/&lt;suffix&gt;]]></comment>
+                            <validate>validate-alpha</validate>
+                            <comment>Suffix to be added to the feed url for extra protection. http://www.example.com/tweakwiseexport/feed/somesuffix</comment>
+                        </protected>
+                        <email_notification translate="label" module="emico_tweakwiseexport">
+                            <label>Email notification</label>
+                            <sort_order>70</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <comment>Sent an email after a successful or unsuccessful generation action to this emailaddress. If empty, no action. Comma separated emailaddresses accepted.</comment>
+                        </email_notification>
+                        <schedule translate="label" module="emico_tweakwiseexport">
+                            <label>Cron schedule</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>Cron schedule for rendering, see https://en.wikipedia.org/wiki/Cron</comment>
+                            <sort_order>80</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <comment>Cron schedule when to generate a new feed</comment>
+                        </schedule>
+                        <real_time translate="label" module="emico_tweakwiseexport">
+                            <label>Real time</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <comment>Render xml when requested the cron schedule will be ignored</comment>
+                            <sort_order>90</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <comment>True when every request to the feed url will generate a new feed real time</comment>
+                        </real_time>
+                        <trigger_import_after_export translate="label" module="emico_tweakwiseexport">
+                            <label>Trigger Tweakwise import after successful export</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <comment>This will trigger automatic a request to Tweakwise for import the feed after a successfull generate.</comment>
+                            <sort_order>100</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </trigger_import_after_export>
+                        <server_api_url translate="label" module="emico_tweakwiseexport">
+                            <label>Server API url</label>
+                            <comment>Default: http://navigator-api.tweakwise.com/task/trigger/</comment>
+                            <frontend_type>text</frontend_type>
+                            <validate>validate-url required-entry</validate>
+                            <sort_order>110</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </server_api_url>
+                        <import_api_key translate="label" module="emico_tweakwiseexport">
+                            <label>Import API key Tweakwise</label>
+                            <sort_order>120</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <comment><![CDATA[API protection parameter see Tweakwise import task tab API.]]></comment>
+                        </import_api_key>
+                        <stock_combination>
+                            <label>Stock combination</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>emico_tweakwiseexport/system_config_source_stockcombination</source_model>
+                            <comment>Select attributes of how stock of bundled / configurable will be defined</comment>
+                            <sort_order>130</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </stock_combination>
+                        <product_selection_filter translate="label" module="emico_tweakwiseexport">
+                            <label>Product selection</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>emico_tweakwiseexport/system_config_source_productselectionfilter</source_model>
+                            <comment>Select which products to export</comment>
+                            <sort_order>140</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </product_selection_filter>
+                        <oos_children translate="label">
+                            <label>Export out of stock configurable children</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>150</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment><![CDATA[Would you like to export out of stock simple products of a configurable / bundle product?]]></comment>
+                        </oos_children>
+                        <stock_percentage>
+                            <label>Stock Percentage</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <comment>Export percentage of children in stock as stock_percentage attribute. With simple products this will result in always 0 or 100.</comment>
+                            <sort_order>160</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </stock_percentage>
+                        <export_non_flat_attributes translate="label">
+                            <label>Export non flat but filterable attributes</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>170</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment><![CDATA[Export all attributes that are not in the flat tables but do have quick search, advanced search, filterable or used for sorting enabled. Pleas not this could slow down the export significantly]]></comment>
+                        </export_non_flat_attributes>
+                    </fields>
+                </export>
+            </groups>
+        </emico_tweakwise>
+    </sections>
+</config>
