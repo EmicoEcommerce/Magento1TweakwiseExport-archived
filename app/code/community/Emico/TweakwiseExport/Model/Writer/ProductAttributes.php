@@ -74,14 +74,19 @@ class Emico_TweakwiseExport_Model_Writer_ProductAttributes
         if (!$this->_extraAttributes) {
             $helper = Mage::helper('emico_tweakwiseexport');
             $attributes = $helper->getAttributes();
+            $flatAttributes = array_keys(Mage::getResourceModel('catalog/product_flat_indexer')->getFlatColumns());
 
             /** @var Mage_Catalog_Model_Resource_Eav_Attribute $attribute */
             foreach ($attributes as $attribute) {
                 if ($attribute->isStatic()) {
                     continue;
                 }
-
-                if ($attribute->getUsedInProductListing()) {
+                /**
+                 * Skip attributes that for whatever reason are present in flat table,
+                 * this could be because attribute is marked as filterable.
+                 * @see Mage_Catalog_Helper_Product_Flat::XML_NODE_ADD_FILTERABLE_ATTRIBUTES
+                 */
+                if (isset($flatAttributes[$attribute->getAttributeCode()])) {
                     continue;
                 }
 
