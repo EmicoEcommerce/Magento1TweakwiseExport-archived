@@ -74,7 +74,7 @@ class Emico_TweakwiseExport_Model_Writer_ProductAttributes
         if (!$this->_extraAttributes) {
             $helper = Mage::helper('emico_tweakwiseexport');
             $attributes = $helper->getAttributes();
-            $flatAttributes = array_keys(Mage::getResourceModel('catalog/product_flat_indexer')->getFlatColumns());
+            $flatAttributes = Mage::getResourceModel('catalog/product_flat_indexer')->getFlatColumns();
 
             /** @var Mage_Catalog_Model_Resource_Eav_Attribute $attribute */
             foreach ($attributes as $attribute) {
