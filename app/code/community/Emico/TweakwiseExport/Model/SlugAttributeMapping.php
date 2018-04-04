@@ -30,7 +30,7 @@ class Emico_TweakwiseExport_Model_SlugAttributeMapping extends Mage_Core_Model_A
 
         // Clear the collection cache
         if ($affectedRows > 0) {
-            Mage::getModel('emico_tweakwise/slugAttributeMapping')->clearCache();
+            $this->clearCache();
         }
     }
 
