@@ -37,9 +37,9 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
             $initialEnvironmentInfo = $appEmulation->startEnvironmentEmulation($store->getId());
 
             $iterator->append($this->getSimpleIterator($store));
-            //$iterator->append($this->getBundledIterator($store));
-            //$iterator->append($this->getConfigurableIterator($store));
-            //$iterator->append($this->getGroupedIterator($store));
+            $iterator->append($this->getBundledIterator($store));
+            $iterator->append($this->getConfigurableIterator($store));
+            $iterator->append($this->getGroupedIterator($store));
 
             Mage::dispatchEvent('emico_tweakwiseexport_prepare_product_collection', [
                 'collection' => $iterator,
@@ -97,7 +97,6 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
             }
         }
         $select->where('e.type_id NOT IN(\'bundle\', \'configurable\', \'grouped\')');
-        $select->limit(10);
         $this->addDefaultColumns($select);
 
         /** @var Varien_Db_Statement_Pdo_Mysql $stmt */

@@ -20,10 +20,6 @@ class Emico_TweakwiseExport_Model_Observer_UrlMapping
      */
     public function addProductAttributes(Varien_Event_Observer $observer)
     {
-        if (!Mage::helper('emico_tweakwise/uriStrategy')->hasActiveStrategy('path')) {
-            return;
-        }
-
         /** @var array $exportAttributes */
         $exportAttributes = $observer->getData('exportAttributes');
 
@@ -47,10 +43,6 @@ class Emico_TweakwiseExport_Model_Observer_UrlMapping
      */
     public function writeAttributeSlugs(Varien_Event_Observer $observer)
     {
-        if (!Mage::helper('emico_tweakwise/uriStrategy')->hasActiveStrategy('path')) {
-            return;
-        }
-
         $rowsToInsert = [];
         foreach ($this->attributesExported as $code => $values) {
             /** @var array $values */
