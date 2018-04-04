@@ -2,7 +2,7 @@
 <config>
     <modules>
         <Emico_TweakwiseExport>
-            <version>2.2.1</version>
+            <version>2.3.0</version>
         </Emico_TweakwiseExport>
     </modules>
     <global>
@@ -14,7 +14,16 @@
         <models>
             <emico_tweakwiseexport>
                 <class>Emico_TweakwiseExport_Model</class>
+                <resourceModel>emico_tweakwiseexport_resource</resourceModel>
             </emico_tweakwiseexport>
+            <emico_tweakwiseexport_resource>
+                <class>Emico_TweakwiseExport_Model_Resource</class>
+                <entities>
+                    <slug_attribute_mapping>
+                        <table>emico_tweakwiseexport_slug_attribute_mapping</table>
+                    </slug_attribute_mapping>
+                </entities>
+            </emico_tweakwiseexport_resource>
         </models>
         <helpers>
             <emico_tweakwiseexport>
@@ -30,15 +39,35 @@
                     </emico_tweakwiseexport>
                 </observers>
             </emico_tweakwiseexport_before_copy_feed>
+            <emico_tweakwiseexport_after_export>
+                <observers>
+                    <emico_tweakwiseexport>
+                        <class>emico_tweakwiseexport/observer_urlMapping</class>
+                        <method>writeAttributeSlugs</method>
+                    </emico_tweakwiseexport>
+                </observers>
+            </emico_tweakwiseexport_after_export>
             <emico_tweakwiseexport_product_export_attributes_after>
                 <observers>
                     <emico_tweakwiseexport>
                         <class>emico_tweakwiseexport/observer</class>
                         <method>addNotExportedAttributes</method>
                     </emico_tweakwiseexport>
+                    <emico_tweakwiseexport_urlmapping>
+                        <class>emico_tweakwiseexport/observer_urlMapping</class>
+                        <method>addProductAttributes</method>
+                    </emico_tweakwiseexport_urlmapping>
                 </observers>
             </emico_tweakwiseexport_product_export_attributes_after>
         </events>
+        <resources>
+            <emico_tweakwiseexport_setup>
+                <setup>
+                    <module>Emico_TweakwiseExport</module>
+                    <class>Mage_Catalog_Model_Resource_Eav_Mysql4_Setup</class>
+                </setup>
+            </emico_tweakwiseexport_setup>
+        </resources>
     </global>
     <frontend>
         <routers>

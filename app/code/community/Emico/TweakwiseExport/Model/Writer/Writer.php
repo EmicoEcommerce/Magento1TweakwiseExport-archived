@@ -153,6 +153,7 @@ class Emico_TweakwiseExport_Model_Writer_Writer
             }
 
             $writtenAttributeValues = [];
+            $exportedAttributesValues = [];
             foreach ($product as $attributeCode => $values) {
                 if ($values === null) {
                     continue;
@@ -180,6 +181,7 @@ class Emico_TweakwiseExport_Model_Writer_Writer
                     }
 
                     $writtenAttributeValues[$attributeCode . $value] = true;
+                    $exportedAttributesValues[$attributeCode][] = $value;
                     $writer->writeAttribute($attributeCode, $value);
                 }
             }
@@ -191,6 +193,7 @@ class Emico_TweakwiseExport_Model_Writer_Writer
                 [
                     'product' => $product,
                     'writer' => $writer,
+                    'exportAttributes' => $exportedAttributesValues
                 ]
             );
 
