@@ -8,8 +8,6 @@
  */
 class Emico_TweakwiseExport_Model_Observer_UrlMapping
 {
-    const SLUG_MAPPING_TABLE = 'emico_tweakwise_slug_attribute_mapping';
-
     /**
      * @var array
      */
@@ -53,10 +51,6 @@ class Emico_TweakwiseExport_Model_Observer_UrlMapping
             return;
         }
 
-        $connection = Mage::getSingleton('core/resource')->getConnection('core_write');
-
-        $connection->truncateTable(self::SLUG_MAPPING_TABLE);
-
         $rowsToInsert = [];
         foreach ($this->attributesExported as $code => $values) {
             /** @var array $values */
@@ -70,10 +64,7 @@ class Emico_TweakwiseExport_Model_Observer_UrlMapping
             }
         }
 
-        $connection->insertMultiple(self::SLUG_MAPPING_TABLE, $rowsToInsert);
-
-        // Clear the collection cache
-        Mage::getModel('emico_tweakwise/slugAttributeMapping')->clearCache();
+        Mage::getModel('emico_tweakwiseexport/slugAttributeMapping')->insertBatch($rowsToInsert);
     }
 
     /**
