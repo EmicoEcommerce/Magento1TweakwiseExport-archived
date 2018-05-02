@@ -14,6 +14,11 @@ class Emico_TweakwiseExport_Model_Observer_UrlMapping
     protected $attributesExported = [];
 
     /**
+     * @var array
+     */
+    protected $attributeFilterable = [];
+
+    /**
      * Register all uniquely exported attribute codes and values, so we can persist them at the end of the export
      *
      * @param Varien_Event_Observer $observer
@@ -24,6 +29,10 @@ class Emico_TweakwiseExport_Model_Observer_UrlMapping
         $exportAttributes = $observer->getData('exportAttributes');
 
         foreach ($exportAttributes as $code => $values) {
+
+            if (!$this->isAttributeFilterable($code)) {
+                continue;
+            }
             if (!isset($this->attributesExported[$code])) {
                 $this->attributesExported[$code] = [];
             }
@@ -34,6 +43,19 @@ class Emico_TweakwiseExport_Model_Observer_UrlMapping
                 )
             );
         }
+    }
+
+    /**
+     * @param string $code
+     * @return bool
+     */
+    protected function isAttributeFilterable($code)
+    {
+        if (!isset($this->attributeFilterable[$code])) {
+            $attribute = Mage::getSingleton('catalog/config')->getAttribute(Mage_Catalog_Model_Product::ENTITY, $code);
+            $this->attributeFilterable[$code] = $attribute->getData('is_filterable') == 1;
+        }
+        return (bool) $this->attributeFilterable[$code];
     }
 
     /**
