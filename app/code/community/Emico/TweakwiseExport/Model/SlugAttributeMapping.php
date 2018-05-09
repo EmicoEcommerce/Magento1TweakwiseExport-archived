@@ -6,9 +6,14 @@
 class Emico_TweakwiseExport_Model_SlugAttributeMapping extends Mage_Core_Model_Abstract
 {
     /**
-     * @var
+     * @var array
      */
     protected $mapping;
+
+    /**
+     * @var Emico_TweakwiseExport_Model_Resource_SlugAttributeMapping_Collection
+     */
+    protected $collection;
 
     /**
      * Default constructor
@@ -87,19 +92,29 @@ class Emico_TweakwiseExport_Model_SlugAttributeMapping extends Mage_Core_Model_A
     protected function getMapping()
     {
         if ($this->mapping === null) {
-
             $this->getCollection()->initCache(
                 $this->getCacheInstance(),
                 null,
                 ['collections', 'tweakwise_slugs']
             );
 
-            $collection = $this->getCollection()->load();
-            foreach ($collection as $item) {
+            foreach ($this->getCollection() as $item) {
                 $this->mapping[$item->getAttributeValue()] = $item->getSlug();
             }
         }
         return $this->mapping;
+    }
+
+    /**
+     * @return Emico_TweakwiseExport_Model_Resource_SlugAttributeMapping_Collection|object
+     */
+    public function getCollection()
+    {
+        if ($this->collection === null) {
+            $this->collection = parent::getCollection();
+        }
+
+        return $this->collection;
     }
 
 }
