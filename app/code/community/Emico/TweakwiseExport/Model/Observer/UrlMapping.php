@@ -36,12 +36,9 @@ class Emico_TweakwiseExport_Model_Observer_UrlMapping
             if (!isset($this->attributesExported[$code])) {
                 $this->attributesExported[$code] = [];
             }
-            $this->attributesExported[$code] = array_unique(
-                array_merge(
-                    $this->attributesExported[$code],
-                    $values
-                )
-            );
+            foreach ($values as $value) {
+                $this->attributesExported[$code][$value] = $value;
+            }
         }
     }
 
