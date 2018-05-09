@@ -6,9 +6,14 @@
 class Emico_TweakwiseExport_Model_SlugAttributeMapping extends Mage_Core_Model_Abstract
 {
     /**
-     * @var
+     * @var array
      */
     protected $mapping;
+
+    /**
+     * @var Emico_TweakwiseExport_Model_Resource_SlugAttributeMapping_Collection
+     */
+    protected $collection;
 
     /**
      * Default constructor
@@ -42,10 +47,10 @@ class Emico_TweakwiseExport_Model_SlugAttributeMapping extends Mage_Core_Model_A
     public function getSlugForAttribute($code, $value)
     {
         $mapping = $this->getMapping();
-        if (!isset($mapping[$code][$value])) {
+        if (!isset($mapping[$value])) {
             return $value;
         }
-        return $mapping[$code][$value];
+        return $mapping[$value];
     }
 
     /**
@@ -57,15 +62,11 @@ class Emico_TweakwiseExport_Model_SlugAttributeMapping extends Mage_Core_Model_A
     public function getAttributeValueBySlug($code, $requestedSlug)
     {
         $mapping = $this->getMapping();
-        if (!isset($mapping[$code])) {
-            throw new Emico_TweakwiseExport_Model_Exception('No slugs defined for attributeCode ' . $code);
+        $key = array_search($requestedSlug, $mapping, true);
+        if ($key) {
+            return $mapping[$key];
         }
-        $attributeSlugs = $mapping[$code];
-        foreach ($attributeSlugs as $attributeValue => $slug) {
-            if ($requestedSlug === $slug) {
-                return $attributeValue;
-            }
-        }
+
         throw new Emico_TweakwiseExport_Model_Exception(sprintf('No slug found for attributeCode "%s" and slug "%s"', $code, $requestedSlug));
     }
 
@@ -91,19 +92,29 @@ class Emico_TweakwiseExport_Model_SlugAttributeMapping extends Mage_Core_Model_A
     protected function getMapping()
     {
         if ($this->mapping === null) {
-
             $this->getCollection()->initCache(
                 $this->getCacheInstance(),
                 null,
                 ['collections', 'tweakwise_slugs']
             );
 
-            $collection = $this->getCollection()->load();
-            foreach ($collection as $item) {
-                $this->mapping[$item->getAttributeCode()][$item->getAttributeValue()] = $item->getSlug();
+            foreach ($this->getCollection() as $item) {
+                $this->mapping[$item->getAttributeValue()] = $item->getSlug();
             }
         }
         return $this->mapping;
+    }
+
+    /**
+     * @return Emico_TweakwiseExport_Model_Resource_SlugAttributeMapping_Collection|object
+     */
+    public function getCollection()
+    {
+        if ($this->collection === null) {
+            $this->collection = parent::getCollection();
+        }
+
+        return $this->collection;
     }
 
 }
