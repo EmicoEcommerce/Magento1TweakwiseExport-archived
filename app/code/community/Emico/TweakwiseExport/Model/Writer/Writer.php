@@ -107,7 +107,9 @@ class Emico_TweakwiseExport_Model_Writer_Writer
     {
         $iterator = Mage::getModel('emico_tweakwiseexport/writer_productiterator');
 
+        $i = 0;
         foreach ($iterator as $product) {
+
             if ($this->triggerIgnoreEvent($writer, 'product', $product)) {
                 continue;
             }
@@ -218,8 +220,14 @@ class Emico_TweakwiseExport_Model_Writer_Writer
 
             $writer->endElement(); // </item>
 
-            $writer->flush();
+            if ($i % 1000 === 1) {
+                $writer->flush();
+            }
+
+            $i++;
         }
+
+        $writer->flush();
 
         return $this;
     }
