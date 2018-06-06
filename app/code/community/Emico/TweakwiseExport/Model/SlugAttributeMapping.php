@@ -64,7 +64,7 @@ class Emico_TweakwiseExport_Model_SlugAttributeMapping extends Mage_Core_Model_A
         $mapping = $this->getMapping();
         $key = array_search($requestedSlug, $mapping, true);
         if ($key) {
-            return $mapping[$key];
+            return $key;
         }
 
         throw new Emico_TweakwiseExport_Model_Exception(sprintf('No slug found for attributeCode "%s" and slug "%s"', $code, $requestedSlug));
