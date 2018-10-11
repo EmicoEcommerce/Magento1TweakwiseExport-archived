@@ -103,9 +103,9 @@ class Emico_TweakwiseExport_Model_Writer_Xml extends XMLWriter
     /**
      * @return void
      */
-    public function flush()
+    public function flush($empty = true)
     {
-        fwrite($this->handle, parent::flush());
+        fwrite($this->handle, parent::flush($empty));
     }
 
     /**
