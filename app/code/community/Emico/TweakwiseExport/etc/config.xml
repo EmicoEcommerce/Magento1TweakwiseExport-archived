@@ -39,24 +39,12 @@
                     </emico_tweakwiseexport>
                 </observers>
             </emico_tweakwiseexport_before_copy_feed>
-            <emico_tweakwiseexport_after_export>
-                <observers>
-                    <emico_tweakwiseexport>
-                        <class>emico_tweakwiseexport/observer_urlMapping</class>
-                        <method>writeAttributeSlugs</method>
-                    </emico_tweakwiseexport>
-                </observers>
-            </emico_tweakwiseexport_after_export>
             <emico_tweakwiseexport_product_export_attributes_after>
                 <observers>
                     <emico_tweakwiseexport>
                         <class>emico_tweakwiseexport/observer</class>
                         <method>addNotExportedAttributes</method>
                     </emico_tweakwiseexport>
-                    <emico_tweakwiseexport_urlmapping>
-                        <class>emico_tweakwiseexport/observer_urlMapping</class>
-                        <method>addProductAttributes</method>
-                    </emico_tweakwiseexport_urlmapping>
                 </observers>
             </emico_tweakwiseexport_product_export_attributes_after>
         </events>
