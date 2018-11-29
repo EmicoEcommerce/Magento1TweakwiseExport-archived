@@ -3,8 +3,9 @@
  * @copyright (c) Emico 2015
  */
 
-if (file_exists('abstract.php')) {
-    require_once 'abstract.php';
+$abstractFile = dirname(__FILE__).'/abstract.php';
+if (file_exists($abstractFile)) {
+    require_once $abstractFile;
 } else {
     require_once __DIR__ . '/../../../../shell/abstract.php';
 }
