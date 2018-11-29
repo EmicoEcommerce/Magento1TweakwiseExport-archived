@@ -40,34 +40,51 @@ class Emico_TweakwiseExport_Model_SlugAttributeMapping extends Mage_Core_Model_A
     }
 
     /**
-     * @param $code
-     * @param $value
+     * @param string $value
      * @return string
+     * @throws Exception
      */
-    public function getSlugForAttribute($code, $value)
+    public function getSlugForAttributeValue(string $value)
     {
         $mapping = $this->getMapping();
         if (!isset($mapping[$value])) {
-            return $value;
+            return $this->persistNewSlug($value);
         }
         return $mapping[$value];
+    }
+
+    /**
+     * @param string $attributeValue
+     * @throws Exception
+     * @return string
+     */
+    public function persistNewSlug(string $attributeValue)
+    {
+        $slug = $this->getSlugifier()->slugify($attributeValue);
+        $slugAttributeMappingRecord = Mage::getModel('emico_tweakwiseexport/slugAttributeMapping');
+        $slugAttributeMappingRecord->setData('attribute_value', $attributeValue);
+        $slugAttributeMappingRecord->setData('slug', $slug);
+        $slugAttributeMappingRecord->save();
+        $this->clearCache();
+        return $slug;
     }
 
     /**
      * @param string $code
      * @param string $requestedSlug
      * @return int|null|string
-     * @throws Emico_TweakwiseExport_Model_Exception
+     * @throws \Exception
+     * @throws Emico_TweakwiseExport_Model_Exception_SlugMappingException
      */
     public function getAttributeValueBySlug($code, $requestedSlug)
     {
         $mapping = $this->getMapping();
         $key = array_search($requestedSlug, $mapping, true);
         if ($key) {
-            return $mapping[$key];
+            return $key;
         }
 
-        throw new Emico_TweakwiseExport_Model_Exception(sprintf('No slug found for attributeCode "%s" and slug "%s"', $code, $requestedSlug));
+        throw new Emico_TweakwiseExport_Model_Exception_SlugMappingException(sprintf('No slug found for attributeCode "%s" and slug "%s"', $code, $requestedSlug));
     }
 
     /**
@@ -75,7 +92,7 @@ class Emico_TweakwiseExport_Model_SlugAttributeMapping extends Mage_Core_Model_A
      */
     public function clearCache()
     {
-        return $this->getCacheInstance()->remove($this->getCollection()->getCacheKey());
+        return $this->getCacheInstance()->clean('all', ['tweakwise_slugs']);
     }
 
     /**
@@ -92,12 +109,6 @@ class Emico_TweakwiseExport_Model_SlugAttributeMapping extends Mage_Core_Model_A
     protected function getMapping()
     {
         if ($this->mapping === null) {
-            $this->getCollection()->initCache(
-                $this->getCacheInstance(),
-                null,
-                ['collections', 'tweakwise_slugs']
-            );
-
             foreach ($this->getCollection() as $item) {
                 $this->mapping[$item->getAttributeValue()] = $item->getSlug();
             }
@@ -112,9 +123,21 @@ class Emico_TweakwiseExport_Model_SlugAttributeMapping extends Mage_Core_Model_A
     {
         if ($this->collection === null) {
             $this->collection = parent::getCollection();
+            $this->collection->initCache(
+                $this->getCacheInstance(),
+                null,
+                ['collections', 'tweakwise_slugs']
+            );
         }
 
         return $this->collection;
     }
 
+    /**
+     * @return Emico_Tweakwise_Helper_Slugifier
+     */
+    protected function getSlugifier()
+    {
+        return Mage::helper('emico_tweakwise/slugifier');
+    }
 }
