@@ -22,8 +22,6 @@ $table = $installer->getConnection()
         'slug', Varien_Db_Ddl_Table::TYPE_VARCHAR, 255, array(), 'URL slug'
     )
     ->addColumn(
-        'attribute_code', Varien_Db_Ddl_Table::TYPE_VARCHAR, 255, array(), 'Attribute code in tweakwise'
-    )->addColumn(
         'attribute_value', Varien_Db_Ddl_Table::TYPE_VARCHAR, 255, array(), 'Attribute value in tweakwise'
     );
 
