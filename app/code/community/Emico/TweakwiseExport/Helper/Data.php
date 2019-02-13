@@ -573,7 +573,7 @@ class Emico_TweakwiseExport_Helper_Data extends Mage_Core_Helper_Abstract
         }
 
         $actualValues = array_filter($actualValues);
-        array_unique($actualValues);
+        $actualValues = array_unique($actualValues);
 
         return $actualValues;
     }
@@ -587,7 +587,7 @@ class Emico_TweakwiseExport_Helper_Data extends Mage_Core_Helper_Abstract
     {
         $displayValues = [];
         $source = $attribute->getSource();
-        array_unique($displayValues);
+        $displayValues = array_unique($displayValues);
 
         $newValues = [];
         foreach ($originalValue as $valueId) {
