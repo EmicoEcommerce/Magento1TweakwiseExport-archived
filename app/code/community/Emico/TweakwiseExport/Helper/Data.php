@@ -585,9 +585,7 @@ class Emico_TweakwiseExport_Helper_Data extends Mage_Core_Helper_Abstract
      */
     protected function getSelectAttributeValue(Mage_Catalog_Model_Resource_Eav_Attribute $attribute, array $originalValue)
     {
-        $displayValues = [];
         $source = $attribute->getSource();
-        $displayValues = array_unique($displayValues);
 
         $newValues = [];
         foreach ($originalValue as $valueId) {
