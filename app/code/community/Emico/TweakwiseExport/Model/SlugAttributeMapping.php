@@ -44,7 +44,7 @@ class Emico_TweakwiseExport_Model_SlugAttributeMapping extends Mage_Core_Model_A
      * @return string
      * @throws Exception
      */
-    public function getSlugForAttributeValue(string $value)
+    public function getSlugForAttributeValue($value)
     {
         $mapping = $this->getMapping();
         if (!isset($mapping[$value])) {
@@ -58,7 +58,7 @@ class Emico_TweakwiseExport_Model_SlugAttributeMapping extends Mage_Core_Model_A
      * @throws Exception
      * @return string
      */
-    public function persistNewSlug(string $attributeValue)
+    public function persistNewSlug($attributeValue)
     {
         $slug = $this->getSlugifier()->slugify($attributeValue);
         $slugAttributeMappingRecord = Mage::getModel('emico_tweakwiseexport/slugAttributeMapping');
