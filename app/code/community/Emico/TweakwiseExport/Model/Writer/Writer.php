@@ -206,7 +206,7 @@ class Emico_TweakwiseExport_Model_Writer_Writer
             if (is_string($categories)) {
                 $categories = explode(self::ATTRIBUTE_SEPARATOR, $categories);
             }
-            if (count($categories)) {
+            if (is_array($categories) && count($categories)) {
                 $categories = array_unique($categories);
                 foreach ($categories as $categoryId) {
                     if (isset($this->_exportedCategoryIds[$categoryId])) {
