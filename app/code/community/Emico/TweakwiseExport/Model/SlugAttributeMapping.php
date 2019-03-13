@@ -70,13 +70,11 @@ class Emico_TweakwiseExport_Model_SlugAttributeMapping extends Mage_Core_Model_A
     }
 
     /**
-     * @param string $code
-     * @param string $requestedSlug
+     * @param $requestedSlug
      * @return int|null|string
-     * @throws \Exception
      * @throws Emico_TweakwiseExport_Model_Exception_SlugMappingException
      */
-    public function getAttributeValueBySlug($code, $requestedSlug)
+    public function getAttributeValueBySlug($requestedSlug)
     {
         $mapping = $this->getMapping();
         $key = array_search($requestedSlug, $mapping, true);
@@ -84,7 +82,7 @@ class Emico_TweakwiseExport_Model_SlugAttributeMapping extends Mage_Core_Model_A
             return $key;
         }
 
-        throw new Emico_TweakwiseExport_Model_Exception_SlugMappingException(sprintf('No slug found for attributeCode "%s" and slug "%s"', $code, $requestedSlug));
+        throw new Emico_TweakwiseExport_Model_Exception_SlugMappingException(sprintf('No attribute slug found for slug "%s"', $requestedSlug));
     }
 
     /**
