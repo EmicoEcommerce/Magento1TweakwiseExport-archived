@@ -68,7 +68,6 @@ class Emico_TweakwiseExport_Model_Observer_UrlMapping
             foreach ($values as $value) {
 
                 $rowsToInsert[] = [
-                    'attribute_code' => $code,
                     'attribute_value' => $value,
                     'slug' => $this->getSlugifier()->slugify($value)
                 ];
