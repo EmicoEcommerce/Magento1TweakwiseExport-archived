@@ -11,7 +11,7 @@
     ],
 
     "require" : {
-        "emico/magento1-tweakwise": "^2.0"
+        "emico/magento1-tweakwise": "^2.0.0-beta"
     },
     "extra": {
         "map": [
