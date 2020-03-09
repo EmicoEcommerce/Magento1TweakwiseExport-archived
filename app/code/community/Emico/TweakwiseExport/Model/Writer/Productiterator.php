@@ -190,11 +190,15 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
             $tableAlias . '.entity_id = ' . $stockTableAlias . '.product_id',
             $connection->quoteInto($stockTableAlias . '.website_id = ?', $websiteId),
             $connection->quoteInto($stockTableAlias . '.stock_id = ?', Mage_CatalogInventory_Model_Stock::DEFAULT_STOCK_ID),
+            $connection->quoteInto($stockTableAlias . '.stock_status = ?', Mage_CatalogInventory_Model_Stock_Status::STATUS_IN_STOCK)
         ];
 
         $collection->getSelect()
-            ->join([$stockTableAlias => $collection->getTable('cataloginventory/stock_status')], implode(' AND ', $joinCondition), [])
-            ->where($stockTableAlias . '.stock_status = ?', Mage_CatalogInventory_Model_Stock_Status::STATUS_IN_STOCK);
+            ->joinLeft(
+                [$stockTableAlias => $collection->getTable('cataloginventory/stock_status')],
+                implode(' AND ', $joinCondition),
+                []
+            );
 
         return $this;
     }
