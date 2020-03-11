@@ -61,7 +61,7 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
      */
     protected function getStockPercentageExpression(Mage_Core_Model_Store $store, $stockItemTableAlias = 'oos')
     {
-        $storeConfigManageStock = (int)Mage::getStoreConfig('cataloginventory/item_options/manage_stock', $store);
+        $storeConfigManageStock = (int) Mage::getStoreConfig('cataloginventory/item_options/manage_stock', $store);
         $manageStockColumnValue = "{$stockItemTableAlias}.manage_stock";
         $useConfigManageStockColumnValue = "{$stockItemTableAlias}.use_config_manage_stock";
         if (!$storeConfigManageStock) {
@@ -199,6 +199,8 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
                 implode(' AND ', $joinCondition),
                 []
             );
+
+        $collection->getSelect()->where($stockTableAlias . '.stock_status IS NOT NULL');
 
         return $this;
     }
@@ -388,8 +390,7 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
 
         $this->joinConfigurableChildren($collection, $store);
         if ($this->getHelper()->getIsAddStockPercentage($store)) {
-            $this->joinConfigurableChildren($collection, $store, 'oo');
-            $this->joinStockPercentage($collection, $store);
+            $this->joinConfigurableStockPercentage($collection, $store);
         }
         if (!$this->getHelper()->exportOutOfStockChildren($store)) {
             $this->addStockFilter($collection, 'l');
@@ -418,7 +419,6 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
         /** @var Mage_Catalog_Model_Resource_Product_Flat $entity */
         $entity = $collection->getEntity();
         $select = $collection->getSelect();
-        $connection = $collection->getConnection();
         $configurableLinkTableAlias = $aliasPrefix . 'li';
         $flatTableAlias = $aliasPrefix . 'l';
 
@@ -427,10 +427,48 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
             "{$configurableLinkTableAlias}.parent_id = e.entity_id",
             []
         );
+        $enabled = Mage_Catalog_Model_Product_Status::STATUS_ENABLED;
         $select->join(
             [$flatTableAlias => $entity->getFlatTableName($store->getId())],
-            $connection->quoteInto("{$flatTableAlias}.entity_id = {$configurableLinkTableAlias}.product_id AND {$flatTableAlias}.status = ?", Mage_Catalog_Model_Product_Status::STATUS_ENABLED),
+            "{$flatTableAlias}.entity_id = {$configurableLinkTableAlias}.product_id AND {$flatTableAlias}.status = $enabled",
             []
+        );
+    }
+
+    protected function joinConfigurableStockPercentage(
+        Mage_Catalog_Model_Resource_Product_Collection $collection,
+        Mage_Core_Model_Store $store
+    ) {
+        $select = $collection->getConnection()->select();
+        /** @var Mage_Catalog_Model_Resource_Product_Flat $entity */
+        $entity = $collection->getEntity();
+        $linkTable = $collection->getTable('catalog/product_super_link');
+        $statusTable = $collection->getTable('cataloginventory/stock_status');
+
+        $select->from(['flat' => $entity->getFlatTableName($store->getId())]);
+        $select->join(
+            ['link' => $linkTable],
+            'flat.entity_id = link.parent_id',
+            []
+        );
+        $select->join(
+            ['stock' => $statusTable],
+            'link.product_id = stock.product_id',
+            []
+        );
+        $select->reset('columns');
+        $select->columns(
+            [
+                'stock_percentage' => new Zend_Db_Expr("ROUND((SUM(stock.stock_status) / COUNT(stock.stock_status)) * 100)"),
+                'entity_id' => 'flat.entity_id'
+            ]
+        );
+        $select->where('type_id = ?', 'configurable');
+
+        $collection->getSelect()->join(
+            ['percentage' => $select],
+            'e.entity_id = percentage.entity_id',
+            ['stock_percentage' => 'percentage.stock_percentage']
         );
     }
 
