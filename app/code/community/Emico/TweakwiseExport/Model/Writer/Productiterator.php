@@ -100,7 +100,7 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
 
         $this->joinConfigurableChildren($collection, $store);
         if ($this->getHelper()->getIsAddStockPercentage($store)) {
-            $this->joinConfigurableStockPercentage($collection);
+            $this->joinConfigurableStockPercentage($collection, $store);
         }
         if (!$this->getHelper()->exportOutOfStockChildren($store)) {
             $this->addStockFilter($collection, 'l');
@@ -149,12 +149,15 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
     /**
      * @param Mage_Catalog_Model_Resource_Product_Collection $collection
      */
-    protected function joinConfigurableStockPercentage(Mage_Catalog_Model_Resource_Product_Collection $collection)
-    {
+    protected function joinConfigurableStockPercentage(
+        Mage_Catalog_Model_Resource_Product_Collection $collection,
+        Mage_Core_Model_Store $store
+    ) {
         $select = $collection->getConnection()->select();
         $productTable = $collection->getTable('catalog/product');
         $linkTable = $collection->getTable('catalog/product_super_link');
         $statusTable = $collection->getTable('cataloginventory/stock_status');
+        $websiteId = $store->getWebsiteId();
 
         $select->from(['product' => $productTable]);
         $select->join(
@@ -164,7 +167,7 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
         );
         $select->join(
             ['stock' => $statusTable],
-            'link.product_id = stock.product_id',
+            "link.product_id = stock.product_id AND stock.website_id = $websiteId",
             []
         );
         $select->reset('columns');
@@ -195,7 +198,7 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
 
         $this->joinBundleSelectionChildren($collection, $store);
         if ($this->getHelper()->getIsAddStockPercentage($store)) {
-            $this->joinBundleStockPercentage($collection);
+            $this->joinBundleStockPercentage($collection, $store);
         }
         if (!$this->getHelper()->exportOutOfStockChildren($store)) {
             $this->addStockFilter($collection, 'l');
@@ -243,12 +246,15 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
     /**
      * @param Mage_Catalog_Model_Resource_Product_Collection $collection
      */
-    protected function joinBundleStockPercentage(Mage_Catalog_Model_Resource_Product_Collection $collection)
-    {
+    protected function joinBundleStockPercentage(
+        Mage_Catalog_Model_Resource_Product_Collection $collection,
+        Mage_Core_Model_Store $store
+    ) {
         $select = $collection->getConnection()->select();
         $productTable = $collection->getTable('catalog/product');
         $linkTable = $collection->getTable('bundle/selection');
         $statusTable = $collection->getTable('cataloginventory/stock_status');
+        $websiteId = $store->getWebsiteId();
 
         $select->from(['product' => $productTable]);
         $select->join(
@@ -258,7 +264,7 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
         );
         $select->join(
             ['stock' => $statusTable],
-            'link.product_id = stock.product_id',
+            "link.product_id = stock.product_id AND stock.website_id = $websiteId",
             []
         );
         $select->reset('columns');
@@ -290,7 +296,7 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
 
         $this->joinGroupedChildren($collection, $store);
         if ($this->getHelper()->getIsAddStockPercentage($store)) {
-            $this->joinGroupedStockPercentage($collection);
+            $this->joinGroupedStockPercentage($collection, $store);
         }
 
         if (!$this->getHelper()->exportOutOfStockChildren($store)) {
@@ -340,12 +346,14 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
      * @param Mage_Catalog_Model_Resource_Product_Collection $collection
      */
     protected function joinGroupedStockPercentage(
-        Mage_Catalog_Model_Resource_Product_Collection $collection
+        Mage_Catalog_Model_Resource_Product_Collection $collection,
+        Mage_Core_Model_Store $store
     ) {
         $select = $collection->getConnection()->select();
         $productTable = $collection->getTable('catalog/product');
         $linkTable = $collection->getTable('catalog/product_link');
         $statusTable = $collection->getTable('cataloginventory/stock_status');
+        $websiteId = $store->getWebsiteId();
 
         $select->from(['product' => $productTable]);
         $select->join(
@@ -355,7 +363,7 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
         );
         $select->join(
             ['stock' => $statusTable],
-            'link.linked_product_id = stock.product_id',
+            "link.linked_product_id = stock.product_id AND stock.website_id = $websiteId",
             []
         );
         $select->reset('columns');
