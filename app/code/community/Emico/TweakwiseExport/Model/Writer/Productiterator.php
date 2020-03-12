@@ -56,26 +56,9 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
 
     /**
      * @param Mage_Core_Model_Store $store
-     * @param string $stockItemTableAlias
-     * @return string
-     */
-    protected function getStockPercentageExpression(Mage_Core_Model_Store $store, $stockItemTableAlias = 'oos')
-    {
-        $storeConfigManageStock = (int) Mage::getStoreConfig('cataloginventory/item_options/manage_stock', $store);
-        $manageStockColumnValue = "{$stockItemTableAlias}.manage_stock";
-        $useConfigManageStockColumnValue = "{$stockItemTableAlias}.use_config_manage_stock";
-        if (!$storeConfigManageStock) {
-            $notManageStockCondition = "GREATEST({$useConfigManageStockColumnValue}, (1 - {$manageStockColumnValue}))";
-        } else {
-            $notManageStockCondition = "LEAST((1 - {$useConfigManageStockColumnValue}), (1 - {$manageStockColumnValue}))";
-        }
-
-        return "IF ({$notManageStockCondition} = 1, 100, (100 * {$stockItemTableAlias}.is_in_stock))";
-    }
-
-    /**
-     * @param Mage_Core_Model_Store $store
      * @return Iterator
+     * @throws Emico_TweakwiseExport_Model_Exception_ExportException
+     * @throws Mage_Core_Exception
      */
     public function getSimpleIterator(Mage_Core_Model_Store $store)
     {
@@ -85,7 +68,7 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
         // Add stock
         $select->joinLeft(['s' => $collection->getTable('cataloginventory/stock_item')], 's.product_id = e.entity_id', []);
         $select->columns(['qty' => new Zend_Db_Expr('IF(s.qty IS NOT NULL, s.qty, 2147483647)')]);
-        $select->columns(['stock_percentage' => new Zend_Db_Expr($this->getStockPercentageExpression($store, 's'))]);
+        $select->columns(['stock_percentage' => new Zend_Db_Expr('IF(s.is_in_stock = 1, 100, 0)')]);
 
         /** @var Mage_Catalog_Model_Resource_Product_Flat $entity */
         $entity = $collection->getEntity();
@@ -103,6 +86,292 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
         $stmt = $collection->getSelect()->query();
 
         return new IteratorIterator($stmt);
+    }
+
+    /**
+     * @param Mage_Core_Model_Store $store
+     * @return Iterator
+     * @throws Emico_TweakwiseExport_Model_Exception_ExportException
+     * @throws Mage_Core_Exception
+     */
+    public function getConfigurableIterator(Mage_Core_Model_Store $store)
+    {
+        $collection = $this->createProductCollection($store);
+
+        $this->joinConfigurableChildren($collection, $store);
+        if ($this->getHelper()->getIsAddStockPercentage($store)) {
+            $this->joinConfigurableStockPercentage($collection);
+        }
+        if (!$this->getHelper()->exportOutOfStockChildren($store)) {
+            $this->addStockFilter($collection, 'l');
+        }
+
+        // Add linked attributes
+        $select = $collection->getSelect();
+        $this->addLinkedAttributes($store, $collection);
+        $this->addDefaultColumns($select);
+        $this->addParentAttributeValues($collection);
+        $select->where('e.type_id = ?', 'configurable');
+
+        /** @var Varien_Db_Statement_Pdo_Mysql $stmt */
+        $stmt = $collection->getSelect()->query();
+
+        return new IteratorIterator($stmt);
+    }
+
+    /**
+     * @param Mage_Catalog_Model_Resource_Product_Collection $collection
+     * @param Mage_Core_Model_Store $store
+     * @param string $aliasPrefix
+     * @throws Mage_Core_Exception
+     */
+    protected function joinConfigurableChildren(Mage_Catalog_Model_Resource_Product_Collection $collection, Mage_Core_Model_Store $store, $aliasPrefix = '')
+    {
+        /** @var Mage_Catalog_Model_Resource_Product_Flat $entity */
+        $entity = $collection->getEntity();
+        $select = $collection->getSelect();
+        $configurableLinkTableAlias = $aliasPrefix . 'li';
+        $flatTableAlias = $aliasPrefix . 'l';
+
+        $select->join(
+            [$configurableLinkTableAlias => $collection->getTable('catalog/product_super_link')],
+            "{$configurableLinkTableAlias}.parent_id = e.entity_id",
+            []
+        );
+        $enabled = Mage_Catalog_Model_Product_Status::STATUS_ENABLED;
+        $select->join(
+            [$flatTableAlias => $entity->getFlatTableName($store->getId())],
+            "{$flatTableAlias}.entity_id = {$configurableLinkTableAlias}.product_id AND {$flatTableAlias}.status = $enabled",
+            []
+        );
+    }
+
+    /**
+     * @param Mage_Catalog_Model_Resource_Product_Collection $collection
+     */
+    protected function joinConfigurableStockPercentage(Mage_Catalog_Model_Resource_Product_Collection $collection)
+    {
+        $select = $collection->getConnection()->select();
+        $productTable = $collection->getTable('catalog/product');
+        $linkTable = $collection->getTable('catalog/product_super_link');
+        $statusTable = $collection->getTable('cataloginventory/stock_status');
+
+        $select->from(['product' => $productTable]);
+        $select->join(
+            ['link' => $linkTable],
+            'product.entity_id = link.parent_id',
+            []
+        );
+        $select->join(
+            ['stock' => $statusTable],
+            'link.product_id = stock.product_id',
+            []
+        );
+        $select->reset('columns');
+        $select->columns(
+            [
+                'stock_percentage' => new Zend_Db_Expr("ROUND((SUM(stock.stock_status) / COUNT(stock.stock_status)) * 100)"),
+                'entity_id' => 'product.entity_id'
+            ]
+        );
+        $select->where('type_id = ?', 'configurable');
+
+        $collection->getSelect()->join(
+            ['percentage' => $select],
+            'e.entity_id = percentage.entity_id',
+            ['stock_percentage' => 'percentage.stock_percentage']
+        );
+    }
+
+    /**
+     * @param Mage_Core_Model_Store $store
+     * @return Iterator
+     * @throws Emico_TweakwiseExport_Model_Exception_ExportException
+     * @throws Mage_Core_Exception
+     */
+    public function getBundledIterator(Mage_Core_Model_Store $store)
+    {
+        $collection = $this->createProductCollection($store);
+
+        $this->joinBundleSelectionChildren($collection, $store);
+        if ($this->getHelper()->getIsAddStockPercentage($store)) {
+            $this->joinBundleStockPercentage($collection);
+        }
+        if (!$this->getHelper()->exportOutOfStockChildren($store)) {
+            $this->addStockFilter($collection, 'l');
+        }
+
+        // Add linked attributes
+        $select = $collection->getSelect();
+        $this->addLinkedAttributes($store, $collection);
+        $this->addDefaultColumns($select);
+        $this->addParentAttributeValues($collection);
+        $select->where('e.type_id = ?', 'bundle');
+
+        /** @var Varien_Db_Statement_Pdo_Mysql $stmt */
+        $stmt = $collection->getSelect()->query();
+
+        return new IteratorIterator($stmt);
+    }
+
+    /**
+     * @param Mage_Catalog_Model_Resource_Product_Collection $collection
+     * @param Mage_Core_Model_Store $store
+     * @throws Mage_Core_Exception
+     */
+    protected function joinBundleSelectionChildren(
+        Mage_Catalog_Model_Resource_Product_Collection $collection,
+        Mage_Core_Model_Store $store
+    ) {
+        /** @var Mage_Catalog_Model_Resource_Product_Flat $entity */
+        $entity = $collection->getEntity();
+        $select = $collection->getSelect();
+        $bundleSelectionTableAlias = 'bs';
+        $flatTableAlias = 'l';
+        $select->join(
+            [$bundleSelectionTableAlias => $collection->getTable('bundle/selection')],
+            "{$bundleSelectionTableAlias}.parent_product_id = e.entity_id",
+            []
+        );
+        $select->join(
+            [$flatTableAlias => $entity->getFlatTableName($store->getId())],
+            "{$flatTableAlias}.entity_id = {$bundleSelectionTableAlias}.product_id",
+            []
+        );
+    }
+
+    /**
+     * @param Mage_Catalog_Model_Resource_Product_Collection $collection
+     */
+    protected function joinBundleStockPercentage(Mage_Catalog_Model_Resource_Product_Collection $collection)
+    {
+        $select = $collection->getConnection()->select();
+        $productTable = $collection->getTable('catalog/product');
+        $linkTable = $collection->getTable('bundle/selection');
+        $statusTable = $collection->getTable('cataloginventory/stock_status');
+
+        $select->from(['product' => $productTable]);
+        $select->join(
+            ['link' => $linkTable],
+            'product.entity_id = link.parent_product_id',
+            []
+        );
+        $select->join(
+            ['stock' => $statusTable],
+            'link.product_id = stock.product_id',
+            []
+        );
+        $select->reset('columns');
+        $select->columns(
+            [
+                'stock_percentage' => new Zend_Db_Expr("ROUND((SUM(stock.stock_status) / COUNT(stock.stock_status)) * 100)"),
+                'entity_id' => 'product.entity_id'
+            ]
+        );
+        $select->where('type_id = ?', 'bundle');
+
+        $collection->getSelect()->join(
+            ['percentage' => $select],
+            'e.entity_id = percentage.entity_id',
+            ['stock_percentage' => 'percentage.stock_percentage']
+        );
+    }
+
+    /**
+     * @param Mage_Core_Model_Store $store
+     * @return Iterator
+     * @throws Emico_TweakwiseExport_Model_Exception_ExportException
+     * @throws Mage_Core_Exception
+     * @noinspection ReturnTypeCanBeDeclaredInspection
+     */
+    public function getGroupedIterator(Mage_Core_Model_Store $store)
+    {
+        $collection = $this->createProductCollection($store);
+
+        $this->joinGroupedChildren($collection, $store);
+        if ($this->getHelper()->getIsAddStockPercentage($store)) {
+            $this->joinGroupedStockPercentage($collection);
+        }
+
+        if (!$this->getHelper()->exportOutOfStockChildren($store)) {
+            $this->addStockFilter($collection, 'l');
+        }
+
+        // Add linked attributes
+        $select = $collection->getSelect();
+        $this->addLinkedAttributes($store, $collection);
+        $this->addDefaultColumns($select);
+        $this->addParentAttributeValues($collection);
+        $select->where('e.type_id = ?', 'grouped');
+
+        /** @var Varien_Db_Statement_Pdo_Mysql $stmt */
+        $stmt = $collection->getSelect()->query();
+
+        return new IteratorIterator($stmt);
+    }
+
+    /**
+     * @param Mage_Catalog_Model_Resource_Product_Collection $collection
+     * @param Mage_Core_Model_Store $store
+     * @throws Mage_Core_Exception
+     */
+    protected function joinGroupedChildren(
+        Mage_Catalog_Model_Resource_Product_Collection $collection,
+        Mage_Core_Model_Store $store
+    ) {
+        /** @var Mage_Catalog_Model_Resource_Product_Flat $entity */
+        $entity = $collection->getEntity();
+        $select = $collection->getSelect();
+        $groupedLinkTableAlias = 'li';
+        $flatTableAlias = 'l';
+        $select->join(
+            ['li' => $collection->getTable('catalog/product_link')],
+            "{$groupedLinkTableAlias}.product_id = e.entity_id AND {$groupedLinkTableAlias}.link_type_id = " . Mage_Catalog_Model_Product_Link::LINK_TYPE_GROUPED,
+            []
+        );
+        $select->join(
+            [$flatTableAlias => $entity->getFlatTableName($store->getId())],
+            "{$flatTableAlias}.entity_id = {$groupedLinkTableAlias}.linked_product_id",
+            []
+        );
+    }
+
+    /**
+     * @param Mage_Catalog_Model_Resource_Product_Collection $collection
+     */
+    protected function joinGroupedStockPercentage(
+        Mage_Catalog_Model_Resource_Product_Collection $collection
+    ) {
+        $select = $collection->getConnection()->select();
+        $productTable = $collection->getTable('catalog/product');
+        $linkTable = $collection->getTable('catalog/product_link');
+        $statusTable = $collection->getTable('cataloginventory/stock_status');
+
+        $select->from(['product' => $productTable]);
+        $select->join(
+            ['link' => $linkTable],
+            'product.entity_id = link.product_id AND link.link_type_id = ' . Mage_Catalog_Model_Product_Link::LINK_TYPE_GROUPED,
+            []
+        );
+        $select->join(
+            ['stock' => $statusTable],
+            'link.linked_product_id = stock.product_id',
+            []
+        );
+        $select->reset('columns');
+        $select->columns(
+            [
+                'stock_percentage' => new Zend_Db_Expr("ROUND((SUM(stock.stock_status) / COUNT(stock.stock_status)) * 100)"),
+                'entity_id' => 'product.entity_id'
+            ]
+        );
+        $select->where('type_id = ?', 'grouped');
+
+        $collection->getSelect()->join(
+            ['percentage' => $select],
+            'e.entity_id = percentage.entity_id',
+            ['stock_percentage' => 'percentage.stock_percentage']
+        );
     }
 
     /**
@@ -177,7 +446,7 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
     /**
      * @param Mage_Catalog_Model_Resource_Product_Collection $collection
      * @param string $tableAlias
-     * @return $this
+     * @throws Mage_Core_Model_Store_Exception
      */
     protected function addStockFilter(Mage_Catalog_Model_Resource_Product_Collection $collection, $tableAlias)
     {
@@ -201,8 +470,6 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
             );
 
         $collection->getSelect()->where($stockTableAlias . '.stock_status IS NOT NULL');
-
-        return $this;
     }
 
     /**
@@ -229,73 +496,6 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
         $select->columns($columns);
 
         return $this;
-    }
-
-    /**
-     * @param Mage_Core_Model_Store $store
-     * @return Iterator
-     */
-    public function getBundledIterator(Mage_Core_Model_Store $store)
-    {
-        $collection = $this->createProductCollection($store);
-
-        $this->joinBundleSelectionChildren($collection, $store);
-        if ($this->getHelper()->getIsAddStockPercentage($store)) {
-            $this->joinBundleSelectionChildren($collection, $store, 'oo');
-            $this->joinStockPercentage($collection, $store);
-        }
-        if (!$this->getHelper()->exportOutOfStockChildren($store)) {
-            $this->addStockFilter($collection, 'l');
-        }
-
-        // Add linked attributes
-        $select = $collection->getSelect();
-        $this->addLinkedAttributes($store, $collection);
-        $this->addDefaultColumns($select);
-        $this->addParentAttributeValues($collection);
-        $select->where('e.type_id = ?', 'bundle');
-
-        /** @var Varien_Db_Statement_Pdo_Mysql $stmt */
-        $stmt = $collection->getSelect()->query();
-
-        return new IteratorIterator($stmt);
-    }
-
-    /**
-     * @param Mage_Catalog_Model_Resource_Product_Collection $collection
-     * @param Mage_Core_Model_Store $store
-     * @param string $aliasPrefix
-     */
-    protected function joinBundleSelectionChildren(Mage_Catalog_Model_Resource_Product_Collection $collection, Mage_Core_Model_Store $store, $aliasPrefix = '')
-    {
-        /** @var Mage_Catalog_Model_Resource_Product_Flat $entity */
-        $entity = $collection->getEntity();
-        $select = $collection->getSelect();
-        $bundleSelectionTableAlias = $aliasPrefix . 'bs';
-        $flatTableAlias = $aliasPrefix . 'l';
-        $select->join(
-            [$bundleSelectionTableAlias => $collection->getTable('bundle/selection')],
-            "{$bundleSelectionTableAlias}.parent_product_id = e.entity_id",
-            []
-        );
-        $select->join(
-            [$flatTableAlias => $entity->getFlatTableName($store->getId())],
-            "{$flatTableAlias}.entity_id = {$bundleSelectionTableAlias}.product_id",
-            []
-        );
-    }
-
-    /**
-     * @param Mage_Catalog_Model_Resource_Product_Collection $collection
-     * @param Mage_Core_Model_Store $store
-     */
-    protected function joinStockPercentage(Mage_Catalog_Model_Resource_Product_Collection $collection, Mage_Core_Model_Store $store)
-    {
-        $collection->getSelect()->joinLeft(
-            ['oos' => $collection->getTable('cataloginventory/stock_item')],
-            'oos.product_id = ool.entity_id',
-            ['stock_percentage' => new Zend_Db_Expr("ROUND((SUM({$this->getStockPercentageExpression($store)}) / COUNT(oos.qty)))")]
-        );
     }
 
     /**
@@ -332,7 +532,7 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
                 $columnExpression = $column;
             }
 
-            if ($column == 'name') {
+            if ($column === 'name') {
                 $alias = 'alt_name';
             } else {
                 $alias = $column;
@@ -378,152 +578,5 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
             // No concat needed we need the specific value
             $select->columns([$alias => $attributeCode]);
         }
-    }
-
-    /**
-     * @param Mage_Core_Model_Store $store
-     * @return Iterator
-     */
-    public function getConfigurableIterator(Mage_Core_Model_Store $store)
-    {
-        $collection = $this->createProductCollection($store);
-
-        $this->joinConfigurableChildren($collection, $store);
-        if ($this->getHelper()->getIsAddStockPercentage($store)) {
-            $this->joinConfigurableStockPercentage($collection, $store);
-        }
-        if (!$this->getHelper()->exportOutOfStockChildren($store)) {
-            $this->addStockFilter($collection, 'l');
-        }
-
-        // Add linked attributes
-        $select = $collection->getSelect();
-        $this->addLinkedAttributes($store, $collection);
-        $this->addDefaultColumns($select);
-        $this->addParentAttributeValues($collection);
-        $select->where('e.type_id = ?', 'configurable');
-
-        /** @var Varien_Db_Statement_Pdo_Mysql $stmt */
-        $stmt = $collection->getSelect()->query();
-
-        return new IteratorIterator($stmt);
-    }
-
-    /**
-     * @param Mage_Catalog_Model_Resource_Product_Collection $collection
-     * @param Mage_Core_Model_Store $store
-     * @param string $aliasPrefix
-     */
-    protected function joinConfigurableChildren(Mage_Catalog_Model_Resource_Product_Collection $collection, Mage_Core_Model_Store $store, $aliasPrefix = '')
-    {
-        /** @var Mage_Catalog_Model_Resource_Product_Flat $entity */
-        $entity = $collection->getEntity();
-        $select = $collection->getSelect();
-        $configurableLinkTableAlias = $aliasPrefix . 'li';
-        $flatTableAlias = $aliasPrefix . 'l';
-
-        $select->join(
-            [$configurableLinkTableAlias => $collection->getTable('catalog/product_super_link')],
-            "{$configurableLinkTableAlias}.parent_id = e.entity_id",
-            []
-        );
-        $enabled = Mage_Catalog_Model_Product_Status::STATUS_ENABLED;
-        $select->join(
-            [$flatTableAlias => $entity->getFlatTableName($store->getId())],
-            "{$flatTableAlias}.entity_id = {$configurableLinkTableAlias}.product_id AND {$flatTableAlias}.status = $enabled",
-            []
-        );
-    }
-
-    protected function joinConfigurableStockPercentage(
-        Mage_Catalog_Model_Resource_Product_Collection $collection,
-        Mage_Core_Model_Store $store
-    ) {
-        $select = $collection->getConnection()->select();
-        /** @var Mage_Catalog_Model_Resource_Product_Flat $entity */
-        $entity = $collection->getEntity();
-        $linkTable = $collection->getTable('catalog/product_super_link');
-        $statusTable = $collection->getTable('cataloginventory/stock_status');
-
-        $select->from(['flat' => $entity->getFlatTableName($store->getId())]);
-        $select->join(
-            ['link' => $linkTable],
-            'flat.entity_id = link.parent_id',
-            []
-        );
-        $select->join(
-            ['stock' => $statusTable],
-            'link.product_id = stock.product_id',
-            []
-        );
-        $select->reset('columns');
-        $select->columns(
-            [
-                'stock_percentage' => new Zend_Db_Expr("ROUND((SUM(stock.stock_status) / COUNT(stock.stock_status)) * 100)"),
-                'entity_id' => 'flat.entity_id'
-            ]
-        );
-        $select->where('type_id = ?', 'configurable');
-
-        $collection->getSelect()->join(
-            ['percentage' => $select],
-            'e.entity_id = percentage.entity_id',
-            ['stock_percentage' => 'percentage.stock_percentage']
-        );
-    }
-
-    /**
-     * @param Mage_Core_Model_Store $store
-     * @return Iterator
-     */
-    public function getGroupedIterator(Mage_Core_Model_Store $store)
-    {
-        $collection = $this->createProductCollection($store);
-
-        $this->joinGroupedChildren($collection, $store);
-        if ($this->getHelper()->getIsAddStockPercentage($store)) {
-            $this->joinGroupedChildren($collection, $store, 'oo');
-            $this->joinStockPercentage($collection, $store);
-        }
-
-        if (!$this->getHelper()->exportOutOfStockChildren($store)) {
-            $this->addStockFilter($collection, 'l');
-        }
-
-        // Add linked attributes
-        $select = $collection->getSelect();
-        $this->addLinkedAttributes($store, $collection);
-        $this->addDefaultColumns($select);
-        $this->addParentAttributeValues($collection);
-        $select->where('e.type_id = ?', 'grouped');
-
-        /** @var Varien_Db_Statement_Pdo_Mysql $stmt */
-        $stmt = $collection->getSelect()->query();
-
-        return new IteratorIterator($stmt);
-    }
-
-    /**
-     * @param Mage_Catalog_Model_Resource_Product_Collection $collection
-     * @param Mage_Core_Model_Store $store
-     * @param string $aliasPrefix
-     */
-    protected function joinGroupedChildren(Mage_Catalog_Model_Resource_Product_Collection $collection, Mage_Core_Model_Store $store, $aliasPrefix = '')
-    {
-        /** @var Mage_Catalog_Model_Resource_Product_Flat $entity */
-        $entity = $collection->getEntity();
-        $select = $collection->getSelect();
-        $groupedLinkTableAlias = $aliasPrefix . 'li';
-        $flatTableAlias = $aliasPrefix . 'l';
-        $select->join(
-            [$groupedLinkTableAlias => $collection->getTable('catalog/product_link')],
-            "{$groupedLinkTableAlias}.product_id = e.entity_id AND {$groupedLinkTableAlias}.link_type_id = " . Mage_Catalog_Model_Product_Link::LINK_TYPE_GROUPED,
-            []
-        );
-        $select->join(
-            [$flatTableAlias => $entity->getFlatTableName($store->getId())],
-            "{$flatTableAlias}.entity_id = {$groupedLinkTableAlias}.linked_product_id",
-            []
-        );
     }
 }
