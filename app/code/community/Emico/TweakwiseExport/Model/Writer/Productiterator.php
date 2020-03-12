@@ -162,7 +162,8 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
 
         $collection->getSelect()->joinLeft(
             ['l' => $childSelect],
-            'e.entity_id = l.parent_id'
+            'e.entity_id = l.parent_id',
+            []
         );
     }
 
