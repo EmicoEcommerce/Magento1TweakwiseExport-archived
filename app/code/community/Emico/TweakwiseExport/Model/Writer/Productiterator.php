@@ -14,8 +14,6 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
     protected $_productIdSelects = [];
 
     /**
-     * @deprecated 4.0.0
-     *
      * @param Mage_Core_Model_Store $store
      * @return IteratorIterator
      * @throws Emico_TweakwiseExport_Model_Exception_ExportException
@@ -27,8 +25,6 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
     }
 
     /**
-     * @deprecated 4.0.0
-     *
      * @param Mage_Core_Model_Store $store
      * @return IteratorIterator
      * @throws Emico_TweakwiseExport_Model_Exception_ExportException
@@ -40,8 +36,6 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
     }
 
     /**
-     * @deprecated 4.0.0
-     *
      * @param Mage_Core_Model_Store $store
      * @return IteratorIterator
      * @throws Emico_TweakwiseExport_Model_Exception_ExportException
@@ -76,9 +70,9 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
             $initialEnvironmentInfo = $appEmulation->startEnvironmentEmulation($store->getId());
 
             $iterator->append($this->getSimpleIterator($store));
-            $iterator->append($this->getProductTypeIterator($store, 'bundle'));
-            $iterator->append($this->getProductTypeIterator($store, 'configurable'));
-            $iterator->append($this->getProductTypeIterator($store, 'grouped'));
+            $iterator->append($this->getBundledIterator($store));
+            $iterator->append($this->getConfigurableIterator($store));
+            $iterator->append($this->getGroupedIterator($store));
 
             Mage::dispatchEvent('emico_tweakwiseexport_prepare_product_collection', [
                 'collection' => $iterator,
