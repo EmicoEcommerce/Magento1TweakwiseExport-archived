@@ -14,6 +14,45 @@ class Emico_TweakwiseExport_Model_Writer_Productiterator implements IteratorAggr
     protected $_productIdSelects = [];
 
     /**
+     * @deprecated 4.0.0
+     *
+     * @param Mage_Core_Model_Store $store
+     * @return IteratorIterator
+     * @throws Emico_TweakwiseExport_Model_Exception_ExportException
+     * @throws Mage_Core_Exception
+     */
+    public function getConfigurableIterator(Mage_Core_Model_Store $store)
+    {
+        return $this->getProductTypeIterator($store, 'configurable');
+    }
+
+    /**
+     * @deprecated 4.0.0
+     *
+     * @param Mage_Core_Model_Store $store
+     * @return IteratorIterator
+     * @throws Emico_TweakwiseExport_Model_Exception_ExportException
+     * @throws Mage_Core_Exception
+     */
+    public function getBundledIterator(Mage_Core_Model_Store $store)
+    {
+        return $this->getProductTypeIterator($store, 'bundle');
+    }
+
+    /**
+     * @deprecated 4.0.0
+     *
+     * @param Mage_Core_Model_Store $store
+     * @return IteratorIterator
+     * @throws Emico_TweakwiseExport_Model_Exception_ExportException
+     * @throws Mage_Core_Exception
+     */
+    public function getGroupedIterator(Mage_Core_Model_Store $store)
+    {
+        return $this->getProductTypeIterator($store, 'grouped');
+    }
+
+    /**
      * {@inheritDoc}
      */
     public function getIterator()
